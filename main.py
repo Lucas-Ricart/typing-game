@@ -5,7 +5,7 @@ import random
 pygame.init()
 
 difficulty = 1
-fruits = ['melon', 'orange', 'pomegranate', 'guava', 'bomb']
+fruits = ['melon', 'orange', 'pomegranate', 'guava', 'bomb', 'ice_cube']
 HEIGHT = 480
 WIDTH = 854
 DIMENSIONS = WIDTH, HEIGHT
@@ -18,32 +18,27 @@ gameDisplay = pygame.display.set_mode((DIMENSIONS))
 #fonts
 font = pygame.font.SysFont(None, 50)
 
-
-    
-slash = pygame.image.load("images/slash.png")
-
 def generate_random_fruits(fruit):
     fruit_path = "images/" + fruit + ".png"
     data[fruit] = {
         'img': pygame.image.load(fruit_path),
         'x' : random.randint(100,WIDTH-50),
         'y' : HEIGHT,
-        'speed_x': random.randint(-15,15),
-        'speed_y': random.randint(-38, -38),
+        'speed_x': random.randint(-15,15),          #lateral speed
+        'speed_y': random.randint(-38, -38),            #going up speed
         'throw': False,
         'gravity': 0,
         'hit': False,
         'letter':random.choice(letters)
     }
-    if random.random() >= 0.99:
+    if random.random() >= 0.995:            #spawn speed
         data[fruit]['throw'] = True
     else:
         data[fruit]['throw'] = False
 data = {}
 A = 65
-letters = []
-for i in range(26) :
-    letters.append([chr(A + i)])
+letters = ['Z', 'Q', 'S', 'D']
+
 for fruit in fruits:
     generate_random_fruits(fruit)
 
@@ -64,7 +59,7 @@ while running :
             value['x'] += value['speed_x']
             value['y'] += value['speed_y']
             value['speed_y'] += (1 * value['gravity'])
-            value['gravity'] += 0.3
+            value['gravity'] += 0.3             #dropping speed
             if value['x'] <= 0 or value['x'] >= WIDTH-40 :
                 value['speed_x'] = -value['speed_x']
             if value['y'] <= HEIGHT:
@@ -80,11 +75,13 @@ while running :
             if not value['hit'] and pressed == str(value['letter']).strip("[]'") :
                 if key == 'bomb' :
                     half_fruit_path = "images/explosion.png"
+                elif key == 'ice_cube' :
+                    half_fruit_path = "images/break_ice_cube.png"
                 else :
                     half_fruit_path = "images/" + "half_" + key + ".png"
                 value['img'] = pygame.image.load(half_fruit_path)
                 value['speed_x'] = -value['speed_x']
-                value['speed_y'] += -5
+                value['speed_y'] += -40
         except ValueError :
             None
     pygame.display.update()
