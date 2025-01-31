@@ -25,36 +25,39 @@ def spawn_fruit(fruit):
         'x' : random.randint(100,WIDTH-40),
         'y' : HEIGHT,
         'speed_x': random.randint(-15,15),          #lateral speed
-        'speed_y': random.randint(-38, -38),            #going up speed
+        'speed_y': random.randint(-38, -38),            #elevating speed
         'throw': False,
         'gravity': 0,
         'hit': False,
         'letter':random.choice(letters)
     }
-    if random.random() >= 0.99:            #spawn rate
-        if key == 'bomb' :          #reduce bomb spawn probability
-            if random.random() >= 0.5 :
+    if random.random() >= 0.99:         #spawn rate
+        try :
+            if key == 'bomb' :          #reduce bomb spawn probability
+                if random.random() >= 0.85 :
+                    data[fruit]['throw'] = True
+            elif key == 'ice_cube' :            #reduce ice_cube spawn probability
+                if random.random() >= 0.95 :
+                    data[fruit]['throw'] = True
+            else :
                 data[fruit]['throw'] = True
-        elif key == 'ice_cube' :            #reduce ice_cube spawn probability
-            if random.random() >= 0.95 :
-                data[fruit]['throw'] = True
-        else :
-            data[fruit]['throw'] = True
+        except ValueError:
+            None
     else:
         data[fruit]['throw'] = False
 
-def cut() :
-            if not value['hit'] and pressed == str(value['letter']).strip("[]'") :
-                if key == 'bomb' :
-                    half_fruit_path = "images/explosion.png"
-                elif key == 'ice_cube' :
-                    half_fruit_path = "images/break_ice_cube.png"
-                else :
-                    half_fruit_path = "images/" + "half_" + key + ".png"
-                value['img'] = pygame.image.load(half_fruit_path)
-                value['speed_x'] = -value['speed_x']
-                value['speed_y'] += -40
-                value['hit'] = True
+def update_fruit_positions() :
+    if value['throw']:
+        value['x'] += value['speed_x']
+        value['y'] += value['speed_y']
+        value['speed_y'] += (1 * value['gravity'])
+        value['gravity'] += 0.3             #dropping speed
+        if value['x'] <= 20 or value['x'] >= WIDTH-20 :
+            value['speed_x'] = -value['speed_x']
+        draw_fruit()
+    else:
+        spawn_fruit(key)
+    cut()
 
 def draw_fruit() :
     if value['y'] <= HEIGHT :
@@ -65,22 +68,31 @@ def draw_fruit() :
         center_y = rect.top
         letter = str(value['letter']).strip("[]'")
         letter_surface = font.render(letter, 1, WHITE)
-        gameDisplay.blit(letter_surface, letter_surface.get_rect(center=(center_x, center_y)))
+        if not value['hit'] :
+            gameDisplay.blit(letter_surface, letter_surface.get_rect(center=(center_x, center_y)))
     else :
         spawn_fruit(key)
 
-def update_fruit_positions() :
-    if value['throw']:
-        value['x'] += value['speed_x']
-        value['y'] += value['speed_y']
-        value['speed_y'] += (1 * value['gravity'])
-        value['gravity'] += 0.3             #dropping speed
-        if value['x'] <= 0 or value['x'] >= WIDTH-20 :
-            value['speed_x'] = -value['speed_x']
-        draw_fruit()
-    else:
-        spawn_fruit(key)
-    cut()
+def cut() :
+            if not value['hit'] and pressed == str(value['letter']).strip("[]'") :
+                if key == 'bomb' :
+                    half_fruit_path = "images/explosion.png"
+                elif key == 'ice_cube' :
+                    half_fruit_path = "images/break_ice_cube.png"
+                else :
+                    half_fruit_path = "images/half_" + key + ".png"
+                value['img'] = pygame.image.load(half_fruit_path)
+                value['speed_x'] = -value['speed_x']
+                if value['speed_y'] > 0 :
+                    value['speed_y'] = 0
+                    value['speed_y'] += -20
+                else :
+                    if value['speed_x'] < 0 :
+                        value['speed_x'] -= 5
+                    else :
+                        value['speed_x'] += 5
+                value['hit'] = True
+
 data = {}
 letters = ['Z', 'Q', 'S', 'D']          #letters to press to hit fruits
 
