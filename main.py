@@ -9,7 +9,7 @@ pygame.init()
 pygame.mixer.init()
 
 # Load background music
-pygame.mixer.music.load(r"c:\\Users\\loren\\Downloads\\bruitage-bouton-v1-274125.mp3")
+pygame.mixer.music.load("assets/bruitage-bouton-v1-274125.mp3")
 pygame.mixer.music.play(-1)  # Play the music in a loop
 
 # Define window dimensions
@@ -24,10 +24,10 @@ GRAY = (200, 200, 200)
 LIGHT_GRAY = (170, 170, 170)
 
 # Load background image
-BACKGROUND = pygame.image.load(r"c:\\Users\\loren\Downloads\\Arrière-plan Réunion Virtuelle Élégant Générique pour la Nouvelle année en Noir et Doré  (1).png")
+BACKGROUND = pygame.image.load("assets/Arrière-plan Réunion Virtuelle Élégant Générique pour la Nouvelle année en Noir et Doré  (1).png")
 
 # Load fruit images
-FRUITS = [pygame.image.load(r"c:\\Users\\loren\Downloads\\32343watermelon_98881.png") for _ in range(6)]
+FRUITS = [pygame.image.load("assets/32343watermelon_98881.png") for _ in range(6)]
 
 # Define fonts
 FONT = pygame.font.Font(None, 74)
