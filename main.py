@@ -77,7 +77,7 @@ while running :
         else :
             generate_random_fruits(key)
         try :
-            if not value['hit'] and pressed == value['letter'] :
+            if not value['hit'] and pressed == str(value['letter']).strip("[]'") :
                 if key == 'bomb' :
                     half_fruit_path = "images/explosion.png"
                 else :
