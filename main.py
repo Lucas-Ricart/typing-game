@@ -34,10 +34,10 @@ def spawn_fruit(fruit):
     if random.random() >= 0.99:         #spawn rate
         try :
             if key == 'bomb' :          #reduce bomb spawn probability
-                if random.random() >= 0.85 :
+                if random.random() >= 0.75 :
                     data[fruit]['throw'] = True
             elif key == 'ice_cube' :            #reduce ice_cube spawn probability
-                if random.random() >= 0.95 :
+                if random.random() >= 0.85 :
                     data[fruit]['throw'] = True
             else :
                 data[fruit]['throw'] = True
@@ -46,19 +46,6 @@ def spawn_fruit(fruit):
     else:
         data[fruit]['throw'] = False
 
-def update_fruit_positions() :
-    if value['throw']:
-        value['x'] += value['speed_x']
-        value['y'] += value['speed_y']
-        value['speed_y'] += (1 * value['gravity'])
-        value['gravity'] += 0.3             #dropping speed
-        if value['x'] <= 20 or value['x'] >= WIDTH-20 :
-            value['speed_x'] = -value['speed_x']
-        draw_fruit()
-    else:
-        spawn_fruit(key)
-    cut()
-
 def draw_fruit() :
     if value['y'] <= HEIGHT :
         value['img'] = pygame.transform.rotate(value['img'], 90)            #rotate the fruit
@@ -66,9 +53,8 @@ def draw_fruit() :
         rect = value['img'].get_rect(center=(value['x'], value['y']))
         center_x = rect.left
         center_y = rect.top
-        letter = str(value['letter']).strip("[]'")
-        letter_surface = font.render(letter, 1, WHITE)
-        if not value['hit'] :
+        letter_surface = font.render(str(value['letter']).strip("[]'"), 1, WHITE)
+        if not value['hit'] :           #letter disappear when hit
             gameDisplay.blit(letter_surface, letter_surface.get_rect(center=(center_x, center_y)))
     else :
         spawn_fruit(key)
@@ -82,16 +68,29 @@ def cut() :
                 else :
                     half_fruit_path = "images/half_" + key + ".png"
                 value['img'] = pygame.image.load(half_fruit_path)
-                value['speed_x'] = -value['speed_x']
-                if value['speed_y'] > 0 :
+                value['speed_x'] = -value['speed_x']            #fruit go in opposite direction
+                if value['speed_y'] > 0 :           #if dropping fruit do a little jump
                     value['speed_y'] = 0
                     value['speed_y'] += -20
                 else :
-                    if value['speed_x'] < 0 :
+                    if value['speed_x'] < 0 :           #add a bit of speed
                         value['speed_x'] -= 5
                     else :
                         value['speed_x'] += 5
                 value['hit'] = True
+
+def update_fruit_positions() :
+    if value['throw']:
+        value['x'] += value['speed_x']
+        value['y'] += value['speed_y']
+        value['speed_y'] += (1 * value['gravity'])
+        value['gravity'] += 0.3             #dropping speed
+        if value['x'] <= 20 or value['x'] >= WIDTH-20 :
+            value['speed_x'] = -value['speed_x']
+        draw_fruit()
+    else:
+        spawn_fruit(key)
+    cut()
 
 data = {}
 letters = ['Z', 'Q', 'S', 'D']          #letters to press to hit fruits
