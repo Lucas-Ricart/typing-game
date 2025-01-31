@@ -15,7 +15,7 @@ pygame.mixer.music.play(-1)  # Play the music in a loop
 # Define window dimensions
 WIDTH, HEIGHT = 800, 600
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("My Pygame Game")
+pygame.display.set_caption("")
 
 # Define colors
 WHITE = (255, 255, 255)
