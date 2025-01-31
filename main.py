@@ -4,7 +4,6 @@ import random
 
 pygame.init()
 
-difficulty = 1
 fruits = ['melon', 'orange', 'pomegranate', 'guava', 'bomb', 'ice_cube']
 HEIGHT = 480
 WIDTH = 854
@@ -31,7 +30,7 @@ def generate_random_fruits(fruit):
         'hit': False,
         'letter':random.choice(letters)
     }
-    if random.random() >= 0.995:            #spawn speed
+    if random.random() >= 0.995:            #spawn rate
         data[fruit]['throw'] = True
     else:
         data[fruit]['throw'] = False
@@ -62,11 +61,15 @@ while running :
             value['gravity'] += 0.3             #dropping speed
             if value['x'] <= 0 or value['x'] >= WIDTH-40 :
                 value['speed_x'] = -value['speed_x']
-            if value['y'] <= HEIGHT:
-                gameDisplay.blit(value['img'], (value['x'], value['y']))
+            if value['y'] <= HEIGHT :
+                value['img'] = pygame.transform.rotate(value['img'], 90)
+                gameDisplay.blit(value['img'], value['img'].get_rect(center=(value['x'], value['y'])))
+                rect = value['img'].get_rect(center=(value['x'], value['y']))
+                center_x = rect.left
+                center_y = rect.top
                 letter = str(value['letter']).strip("[]'")
                 letter_surface = font.render(letter, 1, WHITE)
-                gameDisplay.blit(letter_surface, letter_surface.get_rect(center=(value['x'], value['y'])))
+                gameDisplay.blit(letter_surface, letter_surface.get_rect(center=(center_x, center_y)))
             else:
                 generate_random_fruits(key)
         else :
