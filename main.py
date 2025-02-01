@@ -32,17 +32,14 @@ def spawn_fruit(fruit):
         'letter':random.choice(letters)
     }
     if random.random() >= 0.99:         #spawn rate
-        try :
-            if key == 'bomb' :          #reduce bomb spawn probability
-                if random.random() >= 0.75 :
-                    data[fruit]['throw'] = True
-            elif key == 'ice_cube' :            #reduce ice_cube spawn probability
-                if random.random() >= 0.85 :
-                    data[fruit]['throw'] = True
-            else :
+        if fruit == 'bomb' :          #reduce bomb spawn probability
+            if random.random() >= 0.855 :
                 data[fruit]['throw'] = True
-        except ValueError:
-            None
+        elif fruit == 'ice_cube' :            #reduce ice_cube spawn probability
+            if random.random() >= 0.95 :
+                data[fruit]['throw'] = True
+        else :
+            data[fruit]['throw'] = True
     else:
         data[fruit]['throw'] = False
 
