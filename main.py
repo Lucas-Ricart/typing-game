@@ -10,16 +10,18 @@ WIDTH = 854
 DIMENSIONS = WIDTH, HEIGHT
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-FPS = 25
+FPS = 15
 clock = pygame.time.Clock()
 pygame.display.set_caption("typing_game.py")
 gameDisplay = pygame.display.set_mode((DIMENSIONS))
 #fonts
 font = pygame.font.SysFont(None, 50)
+#background
+background = pygame.image.load("assets/background.png")
 
 def spawn_fruit(fruit):
     '''Generate fruits'''
-    fruit_path = "images/" + fruit + ".png"
+    fruit_path = "assets/" + fruit + ".png"
     data[fruit] = {
         'img': pygame.image.load(fruit_path),
         'x' : random.randint(100,WIDTH-40),
@@ -59,11 +61,11 @@ def draw_fruit() :
 def cut() :
             if not value['hit'] and pressed == str(value['letter']).strip("[]'") :
                 if key == 'bomb' :
-                    half_fruit_path = "images/explosion.png"
+                    half_fruit_path = "assets/explosion.png"
                 elif key == 'ice_cube' :
-                    half_fruit_path = "images/break_ice_cube.png"
+                    half_fruit_path = "assets/break_ice_cube.png"
                 else :
-                    half_fruit_path = "images/half_" + key + ".png"
+                    half_fruit_path = "assets/half_" + key + ".png"
                 value['img'] = pygame.image.load(half_fruit_path)
                 value['speed_x'] = -value['speed_x']            #fruit go in opposite direction
                 if value['speed_y'] > 0 :           #if dropping fruit do a little jump
@@ -98,7 +100,7 @@ for fruit in fruits:
 running = True
 while running :
     pressed = ""
-    gameDisplay.fill((BLACK))
+    gameDisplay.blit(background, (0, 0))
     for event in pygame.event.get() :
         if event.type == pygame.QUIT :
             running = False
