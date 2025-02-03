@@ -1,6 +1,7 @@
 # Fruit Slicer
 import pygame
 import random
+import json
 
 pygame.init()
 pressed = ""
@@ -44,25 +45,29 @@ def spawn_fruit(fruit) :
         'speed_y': random.randint(-38, -38),            #elevating speed
         'throw': False,
         'gravity': 0,
-        'hit': False,
+        'hit': True,
         'letter':random.choice(letters)
     }
     if random.random() >= 0.99:         #spawn rate
         if fruit == 'bomb' :          #reduce bomb spawn probability
             if random.random() >= 0.855 :
                 data[fruit]['throw'] = True
+                data[fruit]['hit'] = False
         elif fruit == 'ice_cube' :            #reduce ice_cube spawn probability
-            if random.random() >= 0.95 :
+            if random.random() >= 0.1 :
                 data[fruit]['throw'] = True
+                data[fruit]['hit'] = False
         else :
             data[fruit]['throw'] = True
+            data[fruit]['hit'] = False
     else:
         data[fruit]['throw'] = False
+        data[fruit]['hit'] = True
+    
 
-def draw_fruit(key, value) :
+def draw_fruit(key, value, freeze) :
     '''Draw entities and associate letters'''
     if value['y'] <= HEIGHT :
-        value['img'] = pygame.transform.rotate(value['img'], 90)            #rotate the fruit
         gameDisplay.blit(value['img'], value['img'].get_rect(center=(value['x'], value['y'])))
         rect = value['img'].get_rect(center=(value['x'], value['y']))
         center_x = rect.left
@@ -71,11 +76,48 @@ def draw_fruit(key, value) :
             draw_text(str(value['letter']).strip("[]'"), FONT, BLACK, gameDisplay, center_x, center_y)
             draw_text(str(value['letter']).strip("[]'"), FONT, WHITE, gameDisplay, center_x + 1, center_y + 1)
     else :
-        spawn_fruit(key)
+        if freeze != True :
+            spawn_fruit(key)
 
-def cut(key, value, pressed) :
+def cut(key, value, pressed, lives, freeze, score, combo_count) :
     '''Manage cutting animations'''
     if not value['hit'] and pressed == str(value['letter']).strip("[]'") :
+        if key == 'bomb' :
+            game_over(lives, freeze, score, combo_count)
+        if key == 'ice_cube' :
+            value['hit'] = True
+            half_fruit_path = "assets/break_ice_cube.png"
+            freeze_loop(lives, score, combo_count)
+            combo_count += 1
+            value['img'] = pygame.image.load(half_fruit_path)
+        if key != 'bomb' and key != 'ice_cube':
+            half_fruit_path = "assets/half_" + key + ".png"
+            combo_count += 1
+            value['img'] = pygame.image.load(half_fruit_path)    
+        score += 1
+        if combo_count > 4 :
+            score += combo_count-1
+        if combo_count > 3 :
+            score += combo_count-1
+        if combo_count > 2 :
+            score += combo_count-1
+        if combo_count > 1 :
+            score += combo_count-1
+        combo_count = 0
+        print(combo_count)
+        print(score)
+        if freeze != True :
+            value['speed_x'] = -value['speed_x']            #fruit go in opposite direction
+            if value['speed_y'] > 0 :           #if dropping fruit do a little jump
+                value['speed_y'] = 0
+                value['speed_y'] += -20
+            else :
+                if value['speed_x'] < 0 :           #add a bit of speed
+                    value['speed_x'] -= 5
+                else :
+                    value['speed_x'] += 5
+        value['hit'] = True
+    elif value['hit'] :
         if key == 'bomb' :
             half_fruit_path = "assets/explosion.png"
         elif key == 'ice_cube' :
@@ -83,39 +125,54 @@ def cut(key, value, pressed) :
         else :
             half_fruit_path = "assets/half_" + key + ".png"
         value['img'] = pygame.image.load(half_fruit_path)
-        value['speed_x'] = -value['speed_x']            #fruit go in opposite direction
-        if value['speed_y'] > 0 :           #if dropping fruit do a little jump
-            value['speed_y'] = 0
-            value['speed_y'] += -20
-        else :
-            if value['speed_x'] < 0 :           #add a bit of speed
-                value['speed_x'] -= 5
-            else :
-                value['speed_x'] += 5
-        value['hit'] = True
-    elif value['hit'] :
-        if key == 'bomb' :
-            None
-        else :
-            half_fruit_path = "assets/half_" + key + ".png"
-            value['img'] = pygame.image.load(half_fruit_path)
-                
+    return score, combo_count            
 
-def update_fruit_positions(key, value, pressed) :
+def update_fruit_positions(key, value, pressed, lives, freeze, score, combo_count) :
     '''Modify fruits position'''
     if value['throw']:
-        value['x'] += value['speed_x']
-        value['y'] += value['speed_y']
-        value['speed_y'] += value['gravity']
-        value['gravity'] += 0.3         #dropping speed
-        if value['x'] <= value['img'].get_width() // 3 or value['x'] >= WIDTH - value['img'].get_width() // 3 :
-            value['speed_x'] *= -1
-        draw_fruit(key, value)
+        if freeze != True :
+            value['img'] = pygame.transform.rotate(value['img'], 90)            #rotate the fruit
+            value['x'] += value['speed_x']
+            value['y'] += value['speed_y']
+            value['speed_y'] += value['gravity']
+            value['gravity'] += 0.3         #dropping speed
+            if value['x'] <= value['img'].get_width() // 3 or value['x'] >= WIDTH - value['img'].get_width() // 3 :
+                value['speed_x'] *= -1
+        draw_fruit(key, value, freeze)
     else:
-        spawn_fruit(key)
-    cut(key, value, pressed)
+        if freeze != True :
+            spawn_fruit(key)
+    score, combo_count = cut(key, value, pressed, lives, freeze, score, combo_count)
+    return score, combo_count
 
-def game_loop() :
+def draw_lives(lives, score) :
+    # Load lives image
+    first_life = pygame.image.load("assets/white_lives.png")
+    second_life = pygame.image.load("assets/white_lives.png")
+    third_life = pygame.image.load("assets/white_lives.png")
+    if lives < 3 :
+        first_life = pygame.image.load("assets/red_lives.png")
+    if lives < 2 :
+        second_life = pygame.image.load("assets/red_lives.png")
+    if lives < 1 :
+        third_life = pygame.image.load("assets/red_lives.png")
+    gameDisplay.blit(first_life, (5, 0))
+    gameDisplay.blit(second_life, (first_life.get_width() + 5, 0))
+    gameDisplay.blit(third_life, (2 * first_life.get_width() + 5, 0))
+
+    gameDisplay.blit(first_life, (5, 0))
+    gameDisplay.blit(second_life, (first_life.get_width() + 5, 0))
+    gameDisplay.blit(third_life, (2 * first_life.get_width() + 5, 0))
+
+def display_score(score) :
+                display_score1 = FONT.render(str(score), True, BLACK)
+                display_score2 = FONT.render(str(score), True, WHITE)
+                score_rect1 = display_score1.get_rect(topright=(WIDTH -4, 0))
+                score_rect2 = display_score1.get_rect(topright=(WIDTH -5, 1))
+                gameDisplay.blit(display_score1, score_rect1)
+                gameDisplay.blit(display_score2, score_rect2)
+
+def game_loop(lives, freeze, score, combo_count) :
     while True :
         gameDisplay.blit(BACKGROUND, (0, 0))
         pressed = ""
@@ -123,12 +180,17 @@ def game_loop() :
             if event.type == pygame.QUIT :
                 pygame.quit()
             if event.type == pygame.KEYDOWN :
-                if 97 <= event.key <= 122 :
+                if event.key == pygame.K_ESCAPE :
+                    pause_menu()
+                elif 97 <= event.key <= 122 :
                     pressed = chr(event.key).upper()
-            
         for key, value in data.items():
-            update_fruit_positions(key, value, pressed) 
-        
+            score, combo_count = update_fruit_positions(key, value, pressed, lives, freeze, score, combo_count)
+            lives = counter(key, value, lives)
+            draw_lives(lives, score)
+            display_score(score)
+            if lives == 0 :
+                game_over(lives, freeze, score, combo_count)
         pygame.display.update()
         clock.tick(FPS)
 
@@ -165,7 +227,9 @@ def spawn_fruit_menu(fruit) :
         'letter':random.choice(letters)
     }
 def move(key, value) :
+    '''Move the fruits in the menus'''
     if value['throw']:
+        value['img'] = pygame.transform.rotate(value['img'], 90)            #rotate the fruit
         value['x'] += value['speed_x'] + value['gravity']
         value['y'] += value['speed_y'] + value['gravity']
         if value['x'] <= value['img'].get_width() // 3 or value['x'] >= WIDTH - value['img'].get_width() // 3 :
@@ -174,15 +238,17 @@ def move(key, value) :
             value['speed_y'] = -value['speed_y']
     else :
         spawn_fruit_menu(key)
+
 def main_menu():
     while True:
+        freeze = False
         # Draw the background
         gameDisplay.blit(BACKGROUND, (0, 0))
         for key, value in data.items() :
             if key == 'ice_cube' :
                 None
             else :
-                draw_fruit(key, value)
+                draw_fruit(key, value, freeze)
                 move(key, value)
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -192,8 +258,11 @@ def main_menu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.collidepoint((mouse_x, mouse_y)):
                     BUTTON_SOUND.play()
-                    cut(key, value, pressed)
-                    game_loop()
+                    lives = 3
+                    score = 0
+                    combo_count = 0
+                    cut(key, value, pressed, lives, freeze, score, combo_count)
+                    game_loop(lives,freeze, score, combo_count)
                 if score_button.collidepoint((mouse_x, mouse_y)):
                     BUTTON_SOUND.play()
                     show_scores()
@@ -238,13 +307,14 @@ def main_menu():
 
 def show_scores():
     while True:
+        freeze = False
         # Draw the background
         gameDisplay.blit(BACKGROUND, (0, 0))
         for key, value in data.items() :
             if key == 'ice_cube' :
                 None
             else :
-                draw_fruit(key, value)
+                draw_fruit(key, value, freeze)
                 move(key, value)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -260,7 +330,110 @@ def show_scores():
         pygame.display.update()
         clock.tick(FPS)
 
-        pygame.display.flip()
+def counter(key, value, lives) :
+    '''Deduce life on fail'''
+    if key != 'bomb' and key != 'ice_cube' and not value['hit'] :
+        if value['y'] > HEIGHT :
+            lives -= 1
+    return lives
+
+def freeze_loop(lives, score, combo_count) :
+    freeze = True
+    for i in range(4 * FPS) :           #temps de pause
+        gameDisplay.blit(BACKGROUND, (0, 0))
+        pressed = ""
+        for event in pygame.event.get() :
+            if event.type == pygame.QUIT :
+                pygame.quit()
+            if event.type == pygame.KEYDOWN :
+                if event.key == pygame.K_ESCAPE :
+                    pause_menu()
+                elif 97 <= event.key <= 122 :
+                    pressed = chr(event.key).upper()
+        for key, value in data.items():
+            score, combo_count = update_fruit_positions(key, value, pressed, lives, freeze, score, combo_count)
+            lives = counter(key, value, lives)
+            draw_lives(lives, score)
+            display_score(score)
+        pygame.display.update()
+        clock.tick(FPS)
+    freeze = False
+
+def game_over(lives, freeze, score, combo_count):
+    save_score_to_json(score)           # Enregistrer le score dans un fichier JSON
+    while True:
+        gameDisplay.blit(BACKGROUND, (0, 0))
+        draw_text("GAME OVER", FONT, BLACK, gameDisplay, WIDTH // 2, HEIGHT // 4)
+        draw_text("GAME OVER", FONT, WHITE, gameDisplay, WIDTH // 2 + 1, HEIGHT // 4 + 1)
+
+        # Boutons du menu game over
+        retry_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2 - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+        main_menu_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2 + BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if retry_button.collidepoint((mouse_x, mouse_y)):
+                    BUTTON_SOUND.play()
+                    lives = 0
+                    freeze = False
+                    score = 0
+                    combo_count = 0
+                    game_loop(lives, freeze, score, combo_count)
+                if main_menu_button.collidepoint((mouse_x, mouse_y)):
+                    BUTTON_SOUND.play()
+                    main_menu()
+
+
+        # Dessiner les boutons
+        pygame.draw.rect(gameDisplay, LIGHT_GREY, retry_button)
+        pygame.draw.rect(gameDisplay, LIGHT_GREY, main_menu_button)
+        draw_text("Restart", FONT, BLACK, gameDisplay, retry_button.centerx, retry_button.centery)
+        draw_text("Menu", FONT, BLACK, gameDisplay, main_menu_button.centerx, main_menu_button.centery)
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+def pause_menu():
+    while True :
+        gameDisplay.blit(BACKGROUND, (0, 0))
+        draw_text("PAUSE", FONT, BLACK, gameDisplay, WIDTH // 2, HEIGHT // 4)
+        draw_text("PAUSE", FONT, WHITE, gameDisplay, WIDTH // 2 + 1, HEIGHT // 4 + 1)
+
+        # Buttons
+        resume_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2 - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+        main_menu_button = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2 + BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if resume_button.collidepoint((mouse_x, mouse_y)):
+                    BUTTON_SOUND.play()
+                    return  # Reprendre le jeu
+                if main_menu_button.collidepoint((mouse_x, mouse_y)):
+                    BUTTON_SOUND.play()
+                    main_menu()  # Retour au menu principal
+
+        # Dessiner les boutons
+        pygame.draw.rect(gameDisplay, LIGHT_GREY, resume_button)
+        pygame.draw.rect(gameDisplay, LIGHT_GREY, main_menu_button)
+        draw_text("Continue", FONT, BLACK, gameDisplay, resume_button.centerx, resume_button.centery)
+        draw_text("Menu", FONT, BLACK, gameDisplay, main_menu_button.centerx, main_menu_button.centery)
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+def save_score_to_json(score):
+    '''Save the score to a JSON file'''
+    score_data = {"score": score}
+    with open("score.json", "w") as file:
+        json.dump(score_data, file)
+
+
 
 if __name__ == "__main__":
     main_menu()
