@@ -95,7 +95,7 @@ def cut(key, value, pressed, lives, freeze, score, combo_count) :
             combo_count += 1
             value['img'] = pygame.image.load(half_fruit_path)    
         score += 1
-        if combo_count > 4 :
+        '''if combo_count > 4 :
             score += combo_count-1
         if combo_count > 3 :
             score += combo_count-1
@@ -103,7 +103,7 @@ def cut(key, value, pressed, lives, freeze, score, combo_count) :
             score += combo_count-1
         if combo_count > 1 :
             score += combo_count-1
-        combo_count = 0
+        combo_count = 0'''
         print(combo_count)
         print(score)
         if freeze != True :
