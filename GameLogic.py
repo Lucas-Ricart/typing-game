@@ -1,74 +1,81 @@
 import pygame
 import time
 import random
+import json
 
-class GameLogic:
-    def __init__(self):
-        self.score = 0
-        self.strikes = 0
-        self.max_strikes = 3
-        self.active_fruits = []  # List of fruits currently on screen
-        self.frozen = False  # Indicates if time is stopped (ice fruit sliced)
-        self.freeze_time = 0
-        self.fruit_types = ['melon', 'orange', 'pomegranate', 'guava', 'bomb']
+SCORE_FILE = "scores.json"
 
-    def handle_key_press(self, key):
-        """Handles key press and checks if it matches a fruit on screen."""
-        fruits_to_remove = []
-        combo_count = 0
+def load_best_score():
+    try:
+        with open(SCORE_FILE, "r") as file:
+            data = json.load(file)
+            return data.get("best_score", 0)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return 0
 
-        for fruit in self.active_fruits:
-            if fruit["name"] == key:
-                self.apply_fruit_effect(fruit)
-                fruits_to_remove.append(fruit)
-                combo_count += 1
-        
-        if combo_count > 1:
-            self.check_combo(combo_count)
-        
-        for fruit in fruits_to_remove:
-            self.active_fruits.remove(fruit)
+def save_best_score(score):
+    best_score = load_best_score()
+    if score > best_score:
+        with open(SCORE_FILE, "w") as file:
+            json.dump({"best_score": score}, file)
+
+def init_game():
+    return {
+        "score": 0,
+        "strikes": 0,
+        "max_strikes": 3,
+        "active_fruits": [],
+        "fruit_types": ['melon', 'orange', 'pomegranate', 'guava', 'bomb'],
+        "best_score": load_best_score()
+    }
+
+def handle_key_press(game_data, key):
+    fruits_to_remove = []
+    combo_count = 0
+
+    for fruit in game_data["active_fruits"]:
+        if fruit["name"] == key:
+            apply_fruit_effect(game_data, fruit)
+            fruits_to_remove.append(fruit)
+            combo_count += 1
     
-    def apply_fruit_effect(self, fruit):
-        """Applies the effect of the fruit (score, freeze, explosion)."""
-        if fruit["name"] in ["melon", "orange", "pomegranate", "guava"]:
-            self.update_score(1)
-        elif fruit["name"] == "bomb":
-            self.end_game()  # Instantly lose the game
+    if combo_count > 1:
+        check_combo(game_data, combo_count)
     
-    def check_combo(self, count):
-        """Adds bonus points for combos."""
-        combo_bonus = count - 1  # Ex: 2 fruits = +1, 3 fruits = +2
-        self.update_score(combo_bonus)
-    
-    def add_strike(self):
-        """Adds a strike if a fruit reaches the bottom of the screen."""
-        self.strikes += 1
-        if self.strikes >= self.max_strikes:
-            self.end_game()
-    
-    def update_score(self, points):
-        """Adds points to the score."""
-        self.score += points
-    
-    def end_game(self):
-        """Triggers the end of the game."""
-        print(f"Game Over! Final Score: {self.score}")
-        pygame.quit()
-        exit()
-    
-    def update_game_state(self):
-        """Updates the game state by removing expired fruits and handling time freeze."""
-        if self.frozen and time.time() > self.freeze_time:
-            self.frozen = False  # Disable ice fruit effect
-        
-        for fruit in self.active_fruits:
-            if fruit["y"] > 600:  # Assume screen height is 600px
-                self.add_strike()
-                self.active_fruits.remove(fruit)
-    
-    def spawn_fruit(self):
-        """Adds a new random fruit to the screen."""
-        fruit_name = random.choice(self.fruit_types)
-        new_fruit = {"name": fruit_name, "y": 0}  # Representing a fruit as a dictionary
-        self.active_fruits.append(new_fruit)
+    for fruit in fruits_to_remove:
+        game_data["active_fruits"].remove(fruit)
+
+def apply_fruit_effect(game_data, fruit):
+    if fruit["name"] in ["melon", "orange", "pomegranate", "guava"]:
+        update_score(game_data, 1)
+    elif fruit["name"] == "bomb":
+        end_game(game_data)
+
+def check_combo(game_data, count):
+    combo_bonus = count - 1
+    update_score(game_data, combo_bonus)
+
+def add_strike(game_data):
+    game_data["strikes"] += 1
+    if game_data["strikes"] >= game_data["max_strikes"]:
+        end_game(game_data)
+
+def update_score(game_data, points):
+    game_data["score"] += points
+
+def end_game(game_data):
+    print(f"Game Over! Final Score: {game_data['score']}")
+    save_best_score(game_data["score"])
+    pygame.quit()
+    exit()
+
+def update_game_state(game_data):
+    for fruit in game_data["active_fruits"][:]:
+        if fruit["y"] > 600:
+            add_strike(game_data)
+            game_data["active_fruits"].remove(fruit)
+
+def spawn_fruit(game_data):
+    fruit_name = random.choice(game_data["fruit_types"])
+    new_fruit = {"name": fruit_name, "y": 0}
+    game_data["active_fruits"].append(new_fruit)
